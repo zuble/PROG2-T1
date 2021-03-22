@@ -138,17 +138,17 @@ int colecao_apaga(colecao *c){
 
 int *colecao_pesquisa_nome(colecao *c, const char *nomep, int *tam){
 
-	int indi[100];
+	int indi[100] = {0};    //TROCAR O 100
 	int achou = 0, cont = 0;
 
 	for ( int i = 0; k < c->tamanho ; i++){
 		if( strcmp( nomep , c->plantas[i]->nome_cientifico ) == 0){
-				achou = 1; //a plante tem o nomep
+				achou = 1; //a planta tem o nomep
 		}
 
 		else for (int m = 0; m < n_alcunha_c; m++){
 			if( strcmp( nomep , c->plantas[i]->alcunhas[m] ) == 0){
-				achou = 1; //a plante tem o nomep
+				achou = 1; //a planta tem o nomep
 				m == n_alcunha_c;
 			}
 		}
