@@ -45,7 +45,7 @@ int planta_insere(colecao *c, planta *p){
 	int aux_alcunha = 0 ;
 
 	printf("%ld" , c->tamanho);
-	/*
+	//************************************************************************************
 	if (c->tamanho  != 0 ){
 		puts("ola");
 		for (i = 0; i < c->tamanho; i++){
@@ -59,7 +59,7 @@ int planta_insere(colecao *c, planta *p){
 				int n_alcunha_p = p->n_alcunhas;
 				
 				//atualiza alcunhas
-				for ( int k = 0; k < p->n_alcunhas ; i++){
+				for ( int k = 0; k < p->n_alcunhas ; k++){
 					for (int m = 0; m < n_alcunha_c; m++){
 						if( strcmp( p->alcunhas[k] , c->plantas[i]->alcunhas[m] ) == 0){
 							aux_alcunha = 1; //alcunha k já existe
@@ -98,7 +98,7 @@ int planta_insere(colecao *c, planta *p){
 		c->plantas[0] = p ;
 		return 0;
 	}
-*/
+//********************************************************************************************
 	return -1;
 }
 int colecao_tamanho(colecao *c){
@@ -137,7 +137,37 @@ int colecao_apaga(colecao *c){
 }
 
 int *colecao_pesquisa_nome(colecao *c, const char *nomep, int *tam){
-	return NULL;
+
+	int indi[100];
+	int achou = 0, cont = 0;
+
+	for ( int i = 0; k < c->tamanho ; i++){
+		if( strcmp( nomep , c->plantas[i]->nome_cientifico ) == 0){
+				achou = 1; //a plante tem o nomep
+		}
+
+		else for (int m = 0; m < n_alcunha_c; m++){
+			if( strcmp( nomep , c->plantas[i]->alcunhas[m] ) == 0){
+				achou = 1; //a plante tem o nomep
+				m == n_alcunha_c;
+			}
+		}
+	
+		if (achou==1)
+		{
+			indi[cont] = c->plantas[i]->ID;
+			achou = 0;
+			cont++;
+		}
+	}
+
+	*tam=cont;
+	if (cont!=0)
+		return indi;
+	else
+		return NULL;
+
+	
 }
 
 int colecao_reordena(colecao *c, const char *tipo_ordem){
