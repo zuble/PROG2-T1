@@ -118,7 +118,50 @@ int colecao_tamanho(colecao *c){
 }
 
 colecao *colecao_importa(const char *nome_ficheiro, const char *tipo_ordem){
-	return NULL;
+	if( nome_ficheiro == NULL || tipo_ordem == NULL ) return NULL;
+
+	FILE * f;
+  	char * line = NULL;
+	char * search = ",";
+	char * ID , *ncient , *nsem ,*token;
+	int i = 0; 
+	
+ 	size_t len = 0;
+  	ssize_t read;
+
+	f = fopen(nome_ficheiro, "r");
+	if (f == NULL) return NULL;
+
+	colecao * c_imp = colecao_nova(tipo_ordem);
+	planta * aux;
+
+	while ((read = getline(&line, &len, f)) != -1 ){
+
+		i = 0;
+		char **cmds = (char **) calloc(0, sizeof(char*) );
+		ID = strtok( line, search);
+
+		ncient = strtok( NULL, search);
+		
+		nsem = strtok( NULL, search);
+		
+		token = strtok( NULL , search);
+
+		while(token != NULL){
+    		cmds[i] = token ;
+			i++;
+			token = strtok( NULL , search);
+		}
+
+		if( i == 0 ) aux = planta_nova(ID , ncient , NULL , i , atoi(nsem) );
+		else aux = planta_nova(ID , ncient , cmds, i , atoi(nsem) );
+		planta_insere( c_imp , aux );
+		free(cmds);
+	}
+
+	imprime(c_imp);
+	fclose(f);
+	return c_imp;
 }
 
 planta *planta_remove(colecao *c, const char *nomep){
@@ -128,8 +171,14 @@ planta *planta_remove(colecao *c, const char *nomep){
 int planta_apaga(planta *p){
 	if(p == NULL) return -1;
 
-	free(p);
-	return 0;
+	for (int i = 0; i < p->n_alcunhas; i++){
+        free(p->alcunhas[i]);
+    }
+
+    free(p->alcunhas);
+    free(p);
+
+    return 0;
 }
 
 int colecao_apaga(colecao *c){
@@ -140,43 +189,38 @@ int colecao_apaga(colecao *c){
 			planta_apaga(c->plantas[i]);
 		}
 	}
-
+	free(c->plantas);
 	free(c);
+
 	return 0;
 }
 
 int *colecao_pesquisa_nome(colecao *c, const char *nomep, int *tam){
+	int *indi = calloc(0, sizeof(int));    //TROCAR O 100
+    int achou = 0, cont = 0;
 
-	int indi[100] = {0};    //TROCAR O 100
-	int achou = 0, cont = 0;
+    for ( int i = 0; i < c->tamanho ; i++){
+        if( strcmp( nomep , c->plantas[i]->nome_cientifico ) == 0){
+                achou = 1; //a planta tem o nomep
+        }
 
-	for ( int i = 0; k < c->tamanho ; i++){
-		if( strcmp( nomep , c->plantas[i]->nome_cientifico ) == 0){
-				achou = 1; //a planta tem o nomep
-		}
+        else for (int m = 0; m < c->plantas[i]->n_alcunhas; m++){
+            if( strcmp( nomep , c->plantas[i]->alcunhas[m] ) == 0){
+                achou = 1; //a planta tem o nomep
+                m = c->plantas[i]->n_alcunhas;
+            }
+        }
 
-		else for (int m = 0; m < n_alcunha_c; m++){
-			if( strcmp( nomep , c->plantas[i]->alcunhas[m] ) == 0){
-				achou = 1; //a planta tem o nomep
-				m == n_alcunha_c;
-			}
-		}
-
-		if (achou==1)
-		{
-			indi[cont] = c->plantas[i]->ID;
-			achou = 0;
-			cont++;
-		}
+        if (achou==1){
+            indi = (int*)realloc(indi, cont+1);
+            indi[cont] = i;
+            achou = 0;
+            cont++;
+        }
 	}
-
-	*tam=cont;
-	if (cont!=0)
-		return indi;
-	else
-		return NULL;
-
-
+	printf("%d" , cont);
+	*tam = cont;
+	return indi;
 }
 
 int colecao_reordena(colecao *c, const char *tipo_ordem){
