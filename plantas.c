@@ -194,7 +194,6 @@ int planta_apaga(planta *p){
     free(p->alcunhas);
     free(p);
 	p = NULL;
-	free(p);
 
     return 0;
 }
@@ -210,7 +209,6 @@ int colecao_apaga(colecao *c){
 	free(c->plantas);
 	free(c);
 	c = NULL;
-	free(c);
 
 	return 0;
 }
