@@ -226,32 +226,6 @@ planta *planta_remove(colecao *c, const char *nomep){
 	
 	return aux;
 	*/
-	//******************************************
-	planta * aux = NULL;	
-	int k;
-
-	for ( int i = 0; i < c->tamanho ; i++){
-		if( strcmp( c->plantas[i]->nome_cientifico , nomep ) == 0){
-			aux = c->plantas[i];
-			k = i;
-			break;
-		}
-	}
-
-	if (aux != NULL)
-	{
-		while (k < c->tamanho)
-		{
-			c->plantas[k] = c->plantas[k+1];
-			k++;
-		}
-		return aux;
-	}
-	else
-
-	//******************************************
-	//return aux;
-
 	return NULL;
 }
 
