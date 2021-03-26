@@ -8,21 +8,16 @@
 #include <stdio.h>
 
 void imprime(colecao * c){
+
 	for (int i = 0; i < c->tamanho; i++){
-		printf("plantas [%d] ~~ nome : %s | id : %s | nºalcunhas : %d | nºsementes : %d \n" , i , c->plantas[i]->nome_cientifico , c->plantas[i]->ID , c->plantas[i]->n_alcunhas , c->plantas[i]->n_sementes);
-	}
-	puts("");
-	/*
-	puts("alcunhas");
-	for( int k = 0 ; k < c->tamanho ; k++){
-		printf("%s : " , c->plantas[k]->nome_cientifico);
-		for (int i = 0; i < c->plantas[k]->n_alcunhas; i++){
-			printf("%s |", c->plantas[k]->alcunhas[i]);
+		printf("plantas [%d] ~~ nome : %s | id : %s | nºalcunhas : %d | nºsementes : %d | alcunhas :" , i , c->plantas[i]->nome_cientifico , c->plantas[i]->ID , c->plantas[i]->n_alcunhas , c->plantas[i]->n_sementes);
+			
+		for (int j = 0; j < c->plantas[i]->n_alcunhas; j++){
+			printf(" %s , ", c->plantas[i]->alcunhas[j]);
 		}
-		puts("");
+		puts(" ");		
 	}
-	puts("");
-	*/
+
 }
 
 planta *planta_nova(const char *ID, const char *nome_cientifico, char **alcunhas, int n_alcunhas, int n_sementes){
@@ -36,18 +31,20 @@ planta *planta_nova(const char *ID, const char *nome_cientifico, char **alcunhas
 	strncpy( nova->nome_cientifico , nome_cientifico , MAX_NAME);
 	nova->n_sementes = n_sementes;
 	nova->n_alcunhas = n_alcunhas;
-	nova->alcunhas = (char**) calloc( n_alcunhas, sizeof(char*));
-	if(!nova->alcunhas) return NULL;
 
 	if ( n_alcunhas > 0 ){
 
+		nova->alcunhas = calloc( n_alcunhas, sizeof(char*));
+		if(!nova->alcunhas) return NULL;
+	
 		for ( int  i = 0; i < n_alcunhas; i++){
 
-			nova->alcunhas[i]= (char *)malloc(sizeof(char) * strlen(alcunhas[i]) + 1 );
+			nova->alcunhas[i]= malloc(sizeof(char) * (strlen(alcunhas[i]) + 1 ));
             strcpy(nova->alcunhas[i], alcunhas[i]);
 
 		}
 	}
+	else nova->alcunhas = NULL;
 
 	return nova;
 }
@@ -60,19 +57,26 @@ colecao *colecao_nova(const char *tipo_ordem){
 	if( nova == NULL ) return NULL;
 
 	nova->tamanho = 0;
-	strncpy( nova->tipo_ordem , tipo_ordem , 5 );
-	nova->plantas = (planta**) malloc( sizeof(planta*));
+	strcpy( nova->tipo_ordem , tipo_ordem);
+	nova->plantas = (planta**)malloc( sizeof(planta*));
 	//nova->plantas = NULL;
 	
 	return nova;
 }
 
-//erro na inserçao duma alcunha que nao exista na coleçao
 int planta_insere(colecao *c, planta *p){
-	if(p == NULL ) return -1;
+	if(c == NULL || p == NULL ) return -1;
 
 	planta * aux1 , * aux2;
 	int alcunha_ja_existe;
+
+	//caso especifico de ainda nao ter planta nenhuma na colecao
+	if( c->tamanho == 0 ){
+		//c->plantas=malloc(sizeof(planta*));
+		c->plantas[0]=p;
+		c->tamanho++;
+		return 0;
+	}
 
 	for (int i = 0; i < c->tamanho; i++){
 
@@ -89,17 +93,22 @@ int planta_insere(colecao *c, planta *p){
 
 					if( strcmp( p->alcunhas[k] , c->plantas[i]->alcunhas[m] ) == 0) {
 						alcunha_ja_existe = 1;
+						break;
 					}
 				}
 
 				if( !alcunha_ja_existe ){
-					puts("!alcunha_ja_existe");
-					c->plantas[i]->n_alcunhas = c->plantas[i]->n_alcunhas + 1;
-					c->plantas[i]->alcunhas = (char**) realloc( c->plantas[i]->alcunhas , c->plantas[i]->n_alcunhas * sizeof(char*) );
-					c->plantas[i]->alcunhas[ c->plantas[i]->n_alcunhas - 1 ] = malloc(sizeof(char) * strlen(p->alcunhas[k])+1);
-					//c->plantas[i]->alcunhas[ c->plantas[i]->n_alcunhas - 1 ] = p->alcunhas[k];
+
+					if( c->plantas[i]->n_alcunhas == 0 ) c->plantas[i]->alcunhas = (char**)malloc(sizeof(char*));
+
+					else c->plantas[i]->alcunhas = (char**)realloc( c->plantas[i]->alcunhas , (c->plantas[i]->n_alcunhas + 1) * sizeof(char*) );
+					
+					c->plantas[i]->alcunhas[ c->plantas[i]->n_alcunhas ] = malloc(sizeof(char) * ( strlen(p->alcunhas[k])+1 ));
+					memcpy(c->plantas[i]->alcunhas[ c->plantas[i]->n_alcunhas ], p->alcunhas[k],strlen(p->alcunhas[k])+1);
+					c->plantas[i]->n_alcunhas++;
 				}
 			}
+			//imprime(c);
 			return 1;
 		}
 	}
@@ -110,7 +119,6 @@ int planta_insere(colecao *c, planta *p){
 	c->plantas[c->tamanho-1] = p;
 	//reordena
 	colecao_reordena(c, c->tipo_ordem);
-
 	return 0;
 }
 
@@ -126,11 +134,11 @@ colecao *colecao_importa(const char *nome_ficheiro, const char *tipo_ordem){
 	if( nome_ficheiro == NULL || tipo_ordem == NULL ) return NULL;
 	
 	FILE * f;
-  	char buffer[500];
+  	char buffer[300];
 	char *search = "," , *line;
 	char *ID , *ncient , *nsem ,*token1 , *token2;
-	char **cmds = (char**) calloc(0, sizeof(char*) );
-	int i = 0 ; 
+	char **cmds;
+	int count_alc = 0 , aux_ins; 
  	size_t len = 0;
   	ssize_t read;
 
@@ -143,43 +151,55 @@ colecao *colecao_importa(const char *nome_ficheiro, const char *tipo_ordem){
 	while ((read = getline(&line, &len, f)) != -1 ){
 		
 		strcpy(buffer , line);
-		i = 0;		
-		//cmds = (char**) calloc(0, sizeof(char*) );
+		count_alc = 0;	
+		aux = NULL;	
 		
 		ID = strtok( buffer, search);
-		
 		ncient = strtok( NULL, search);
-		
 		nsem = strtok( NULL, search);
 		
-		token1 = strtok( NULL , search); // token = 1º alcunha , caso tenha 
+		// contador para numero de alcunhas
+		while(1) { 
+			token1 = strtok( NULL , search);
+			if( token1 == NULL) break; 
+			count_alc++; 
+		}
+
+		strcpy(buffer , line);
 		
-		if( !token1 ) {
+		if( count_alc > 0 ) {
 			
-			// contador para numero de alcunhas
-			while(token1 != NULL) i++;
+			ID = strtok( buffer, search); // token2 aponta para ID
+			ncient = strtok(NULL , search);
+			nsem = strtok(NULL , search);
+			cmds = (char**) malloc( count_alc * sizeof(char*));
 			
-			token2 = strtok( buffer, search); // token2 aponta para ID
-
-			for (int j = 0; j < 2; j++){
+			for (int k = 0; k < count_alc ; k++){
+				
 				token2 = strtok(NULL , search);
-			}
-
-			for (int k = 0; k < i ; k++){
-				token2 = strtok(NULL , search);
-				cmds[k] = realloc(cmds[k], strlen(token2) + 1);
+				cmds[k]= (char *)malloc(sizeof(char) * ( strlen(token2) + 1 ) );
         		strcpy(cmds[k], token2);
+				
 			}
 			
-			aux = planta_nova(ID , ncient , cmds, i , atoi(nsem) );
+			aux = planta_nova(ID , ncient , cmds, count_alc , atoi(nsem) );
 		}
 		
 		//nao existe alcunhas
 		else aux = planta_nova(ID , ncient , NULL , 0 , atoi(nsem) );  
 		
-		planta_insere( c_imp , aux );
-		//free(cmds);
+		//insere planta aux em c_imp
+		aux_ins = planta_insere( c_imp , aux ) == -1;
+		if ( aux_ins == -1 ) return NULL;
+		else if ( aux_ins == 1 ) planta_apaga(aux);
+
 		
+		//liberta cmds
+		for(int k = 0; k < count_alc ; k++){
+			free(cmds[k]);
+		}
+		free(cmds);
+		cmds = NULL;
 	}
 	
 	//imprime(c_imp);
@@ -212,11 +232,13 @@ planta *planta_remove(colecao *c, const char *nomep){
 int planta_apaga(planta *p){
 	if(p == NULL) return -1;
 
-	for (int i = 0; i < p->n_alcunhas; i++){
-        free(p->alcunhas[i]);
-    }
+	if( p->n_alcunhas > 0){
+		for (int i = 0; i < p->n_alcunhas; i++){
+			free(p->alcunhas[i]);
+		}
+		free(p->alcunhas);
+	}
 
-    free(p->alcunhas);
     free(p);
 	p = NULL;
 
@@ -238,39 +260,46 @@ int colecao_apaga(colecao *c){
 	return 0;
 }
 
-//erro na condicao de encontrar a substring nomep no nome cientifico ou numa das alcunhas da planta i
+
 int *colecao_pesquisa_nome(colecao *c, const char *nomep, int *tam){
+	
 	//printf("nomep : %s\n" , nomep);
-	
-	if ( c == NULL || nomep == NULL ) return NULL;
-	
-	int *indi = malloc ( sizeof(int) );    
-	int achou = 0, cont = 0;
-
-	for ( int i = 0; i < c->tamanho ; i++){
-		//printf("c[%d]->nome_cientifico : %s\n" , i, c->plantas[i]->nome_cientifico );
-		for (int m = 0; m < c->plantas[i]->n_alcunhas; m++){
-            //printf("c[%d]->alcunhas[%d] : %s\n" , i,m, c->plantas[i]->alcunhas[m] );
-			if( strstr( c->plantas[i]->alcunhas[m] , nomep ) != NULL || strstr( c->plantas[i]->nome_cientifico , nomep) != NULL ){
-                achou = 1; 
+    
+    if ( c == NULL || nomep == NULL ) return NULL;
+    
+    int *indi = malloc ( sizeof(int) );    
+    int achou = 0, cont = 0;
+ 
+    for ( int i = 0; i < c->tamanho ; i++){
+        //printf("c[%d]->nome_cientifico : %s\n" , i, c->plantas[i]->nome_cientifico );
+ 
+        if(strstr( c->plantas[i]->nome_cientifico , nomep) != NULL){
+            achou = 1;
+        }
+        else {
+            for (int m = 0; m < c->plantas[i]->n_alcunhas; m++){
+                //printf("c[%d]->alcunhas[%d] : %s\n" , i,m, c->plantas[i]->alcunhas[m] );
+                if(strstr( c->plantas[i]->alcunhas[m] , nomep) != NULL){
+                    achou = 1;
+                    break;
+                }
+                //if ( achou ) break;
             }
-			if ( achou ) break;
         }
-		
+        
         if (achou==1){
-			cont++;
+            cont++;
             indi = realloc(indi, sizeof(int)*cont);
-            indi[cont] = i;
-			printf("%d" , indi[cont]);
-			achou = 0;
+            indi[cont-1] = i;
+            printf("%d" , indi[cont-1]);
+            achou = 0;
         }
-	}
-
-	*tam = cont;
-	if( !cont ) return NULL;
-	
-	return indi;
-	//return NULL;
+    }
+ 
+    *tam = cont;
+    if( !cont ) return NULL;
+    return indi;
+    //return NULL;
 }
 
 int colecao_reordena(colecao *c, const char *tipo_ordem){
@@ -318,7 +347,9 @@ int colecao_reordena(colecao *c, const char *tipo_ordem){
 		
 	}
 	
-	strcpy(c->tipo_ordem , tipo_ordem);
+	if( strcmp(c->tipo_ordem , tipo_ordem) != 0){
+		strcpy(c->tipo_ordem , tipo_ordem);
+	}
 	if( ordem == 1 ) return 1;
 	if( ordem == 0 ) return 0;
 	
