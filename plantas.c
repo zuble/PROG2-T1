@@ -14,8 +14,8 @@ planta *planta_nova(const char *ID, const char *nome_cientifico, char **alcunhas
 	planta* nova = (planta*) malloc(sizeof(planta));
 	if(!nova) return NULL;
 
-	strncpy( nova->ID , ID , 10 );
-	strncpy( nova->nome_cientifico , nome_cientifico , MAX_NAME);
+	strcpy( nova->ID , ID );
+	strcpy( nova->nome_cientifico , nome_cientifico );
 	nova->n_sementes = n_sementes;
 	nova->n_alcunhas = n_alcunhas;
 
@@ -54,7 +54,6 @@ colecao *colecao_nova(const char *tipo_ordem){
 int planta_insere(colecao *c, planta *p){
 	if(c == NULL || p == NULL ) return -1;
 
-	planta * aux1 , * aux2;
 	int alcunha_ja_existe;
 
 	for (int i = 0; i < c->tamanho; i++){
@@ -111,7 +110,7 @@ colecao *colecao_importa(const char *nome_ficheiro, const char *tipo_ordem){
 	
 	FILE * f;
   	char buffer[300];
-	char *search = "," , *line;
+	char *search = "," , *line = NULL;
 	char *ID , *ncient , *nsem ,*token1 , *token2;
 	char **cmds;
 	int count_alc = 0 , aux_ins; 
@@ -182,6 +181,7 @@ colecao *colecao_importa(const char *nome_ficheiro, const char *tipo_ordem){
 	
 	colecao_reordena(c_imp , c_imp->tipo_ordem);
 	fclose(f);
+	free(line);
 	return c_imp;
 }
 
@@ -216,9 +216,9 @@ int planta_apaga(planta *p){
 		for (int i = 0; i < p->n_alcunhas; i++){
 			free(p->alcunhas[i]);
 		}
-		free(p->alcunhas);
 	}
 
+	free(p->alcunhas);
     free(p);
 	p = NULL;
 
@@ -233,13 +233,13 @@ int colecao_apaga(colecao *c){
 			planta_apaga(c->plantas[i]);
 		}
 	}
+
 	free(c->plantas);
 	free(c);
 	c = NULL;
 
 	return 0;
 }
-
 
 int *colecao_pesquisa_nome(colecao *c, const char *nomep, int *tam){
 	
